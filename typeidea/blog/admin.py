@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 from .models import Post, Category, Tag
+from .adminforms import PostAdminForm
+from typeidea.custom_site import custom_site
 
 # Register your models here.
 
@@ -38,8 +40,10 @@ class TagAdmin(admin.ModelAdmin):
         obj.owner = request.user
         return super(TagAdmin, self).save_model(request, obj, form, change)
 
-@admin.register(Post)
+@admin.register(Post, site=custom_site)
 class PostAdmin(admin.ModelAdmin):
+
+    form = PostAdminForm
     list_display = [
         'title', 'category', 'status',
         'created_time', 'owner', 'operator'
@@ -52,19 +56,50 @@ class PostAdmin(admin.ModelAdmin):
     actions_on_bottom = True
 
     save_on_top = True
-
-    fields = (
-        ('category', 'title'),
-        'desc',
-        'status',
-        'content',
-        'tag',
+    exclude = ('owner',)
+    # fields = (
+    #     ('category', 'title'),
+    #     'desc',
+    #     'status',
+    #     'content',
+    #     'tag',
+    # )
+    fieldsets = (
+        (
+            '基础配置', {
+                'description': '基础配置描述',
+                'fields': (
+                    ('title', 'category'),
+                    'status',
+                ),
+            }
+        ),
+        (
+            '内容', {
+                'fields': (
+                    'desc',
+                    'content',
+                ),
+            }
+        ),
+        (
+            '额外信息', {
+                'classes': ('collapse',),
+                'fields': ('tag', ),
+            }
+        )
     )
+
+    class Media:
+        css = {
+            'all': ("https://cdn.bootcss.com/bootstrap.4.0.0-beta.2/css/bootsrap.min.css", ),
+        } 
+        js = ('https://cdn.bootcss.com/bootstrap.4.0.0-beta.2/js/bootsrap.bundle.js')
 
     def operator(self, obj):
         return format_html(
             '<a href="{}">编辑</a>',
-            reverse('admin:blog_post_change', args=(obj.id,))
+            reverse('cus_admin:blog_post_change', args=(obj.id,))
         )
     operator.short_description = '操作'
 
